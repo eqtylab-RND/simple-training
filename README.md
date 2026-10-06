@@ -82,7 +82,7 @@ sudo kubectl apply -f training.yaml
 ### C.3 Monitor the training working in the Verifiable PodVM
 
 ```bash
-sudo watch 'k3s kubectl get pod banking77-train ; echo "---" ; kubectl describe pod banking77-train | tail ; echo "---" ; kubectl logs banking77-train | tail'
+sudo watch 'kubectl get pod banking77-train ; echo "---" ; kubectl describe pod banking77-train | tail ; echo "---" ; kubectl logs banking77-train | tail'
 ```
 
 You should see an output like this:
