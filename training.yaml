@@ -1,0 +1,34 @@
+# banking77 LoRA fine-tune on one H100 inside a Kata GPU guest.
+# Trains, then sleeps so the adapter can be copied out with `kubectl cp`.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: banking77-train
+  namespace: default
+  annotations:
+    cdi.k8s.io/gpu: nvidia.com/pgpu=0
+    io.katacontainers.config.hypervisor.kernel_params: cgroup_no_v1=all pci=realloc
+    io.katacontainers.config.hypervisor.default_memory: "65536"
+    io.katacontainers.config.hypervisor.default_vcpus: "16"
+spec:
+  runtimeClassName: kata-qemu-nvidia-gpu-tdx
+  restartPolicy: Never
+  containers:
+  - name: app
+    image: nvidiademoacr.azurecr.io/eqtylab/banking77-training:latest
+    command: ["/bin/sh", "-lc"]
+    args: ["python train.py --batch-size 8 --limit 2000 --epochs 1 && echo TRAIN_DONE && sleep infinity"]
+    env:
+    - {name: HF_HOME, value: /cache/hf}
+    - {name: HF_HUB_DISABLE_TELEMETRY, value: "1"}
+    resources:
+      limits:   {nvidia.com/pgpu: 1}
+      requests: {nvidia.com/pgpu: 1}
+    volumeMounts:
+    - {name: cache, mountPath: /cache}
+    - {name: dshm,  mountPath: /dev/shm}
+  volumes:
+  - name: cache
+    emptyDir: {sizeLimit: 80Gi}
+  - name: dshm
+    emptyDir: {medium: Memory, sizeLimit: 16Gi}
