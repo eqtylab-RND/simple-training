@@ -26,10 +26,15 @@ spec:
       set -e
       python train.py --batch-size 32 --grad-accum 1 --limit 2000 --epochs 1
       echo TRAIN_DONE
+      echo "== uploading /app/out to azure blob container 'out' =="
+      pip install --no-cache-dir azure-storage-blob
+      python -c "import os,glob;from azure.storage.blob import ContainerClient as C;cc=C.from_container_url(os.environ['AZURE_BLOB_SAS_URL']);[(cc.upload_blob(os.path.relpath(p,'/app/out'),open(p,'rb'),overwrite=True),print('uploaded',os.path.relpath(p,'/app/out'))) for p in glob.glob('/app/out/**',recursive=True) if os.path.isfile(p)]"
+      echo UPLOAD_DONE
       sleep infinity
     env:
     - {name: HF_HOME,                  value: /cache/hf}
     - {name: HF_HUB_DISABLE_TELEMETRY, value: "1"}
+    - {name: AZURE_BLOB_SAS_URL,       value: "__AZURE_BLOB_SAS_URL__"}
     resources:
       limits:   {nvidia.com/pgpu: 1}
       requests: {nvidia.com/pgpu: 1}

@@ -8,7 +8,7 @@ banking77 intent set, on one H100 inside a Kata confidential (TDX) GPU guest.
 BUILDX_NO_DEFAULT_ATTESTATIONS=1 docker buildx build --platform linux/amd64 --load -t nvidiademoacr.azurecr.io/eqtylab/banking77-training:latest .
 docker push nvidiademoacr.azurecr.io/eqtylab/banking77-training:latest
 
-# launch training
+# launch training (inject the real SAS into the __AZURE_BLOB_SAS_URL__ placeholder)
 sudo k3s kubectl apply -f training.yaml
 sudo k3s kubectl get pod banking77-train -w
 
