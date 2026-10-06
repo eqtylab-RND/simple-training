@@ -7,7 +7,7 @@ banking77 intent set, on one GPU inside a Kata Confidential (TDX) GPU guest.
 
 ### A.1 Get access to training environment
 
-Get `ACR_TOKEN` and `AZURE_BLOB_SAS_URL` from EQTY. Note that the token expires in 4 hours.
+Get `ACR_TOKEN` from EQTY. Note that the token expires in 4 hours.
 
 Allow list your IP address to push to docker repository at `nvidiademoacr.azurecr.io`.
 
@@ -110,7 +110,7 @@ Error from server (BadRequest): container "app" in pod "banking77-train" is wait
 
 Note that the initially, the bottom will show an error until the `banking77-train` workload is in `Running` status, and starts producing logs.
 
-Follow the logs and watch for completion with `UPLOAD_DONE`.
+Follow the logs and watch for completion with `TRAIN_DONE`.
 
 ### C.4 Clean-up the workload
 
