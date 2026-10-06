@@ -14,12 +14,8 @@ see evaluate.py.
 from __future__ import annotations
 
 import argparse
-import inspect
 import json
-import os
-from pathlib import Path
 
-import eqty_sdk
 import torch
 from peft import LoraConfig, get_peft_model
 from transformers import (
@@ -49,28 +45,7 @@ LORA_TARGETS = [
 
 def read_jsonl(path):
     with path.open() as fh:
-        rows = [json.loads(line) for line in fh if line.strip()]
-    source = eqty_sdk.Code.from_object(
-        inspect.getsource(read_jsonl), name="read_jsonl source"
-    )
-    source_file = eqty_sdk.Document.from_path(
-        path, name="Banking77 training examples JSONL"
-    )
-    row_data = eqty_sdk.Dataset.from_object(
-        rows, name="Banking77 training examples"
-    )
-    (
-        eqty_sdk.Computation.new(
-            name="Load training examples",
-            description="Read the Banking77 training examples from disk.",
-            computation_type="ingest",
-        )
-        .add_input_cid([source.cid, source_file.cid])
-        .add_output_cid(row_data.cid)
-        .set_computation_cid(source.cid)
-        .finalize()
-    )
-    return rows
+        return [json.loads(line) for line in fh if line.strip()]
 
 
 def encode(tokenizer, rows, labels, max_len):
@@ -100,43 +75,6 @@ def encode(tokenizer, rows, labels, max_len):
     if truncated:
         print(f"WARNING: {truncated}/{len(rows)} examples hit max_len={max_len}; "
               f"raise MAX_SEQ_LEN in common.py")
-    source = eqty_sdk.Code.from_object(
-        inspect.getsource(encode), name="encode source"
-    )
-    input_cids = [
-        source.cid,
-        eqty_sdk.Dataset.from_object(
-            rows, name="Training examples supplied for encoding"
-        ).cid,
-        eqty_sdk.Configuration.from_object(
-            {
-                "tokenizer": getattr(tokenizer, "name_or_path", type(tokenizer).__name__),
-                "max_sequence_length": max_len,
-            },
-            name="Training encoder configuration",
-        ).cid,
-    ]
-    if labels is not None:
-        input_cids.append(
-            eqty_sdk.Dataset.from_object(
-                labels, name="Labels supplied in training prompts"
-            ).cid
-        )
-    encoded_data = eqty_sdk.Dataset.from_object(
-        encoded, name="Prompt-masked training examples"
-    )
-    (
-        eqty_sdk.Computation.new(
-            name="Encode training examples",
-            description="Build prompts, tokenize completions, and mask prompt tokens from loss.",
-            computation_type="transform",
-            truncated_examples=truncated,
-        )
-        .add_input_cid(input_cids)
-        .add_output_cid(encoded_data.cid)
-        .set_computation_cid(source.cid)
-        .finalize()
-    )
     return encoded
 
 
@@ -170,50 +108,8 @@ def main():
                     help="closed-book: omit the 77 labels from the prompt")
     args = ap.parse_args()
 
-    eqty_dir = Path(
-        os.environ.get(
-            "EQTY_SDK_DIR",
-            Path.home() / ".local" / "state" / "banking77-train-eqty",
-        )
-    )
-    cfg = eqty_sdk.init(
-        default_context=eqty_sdk.Context.new("Banking77 model training"),
-        custom_dir=eqty_dir,
-    ).set_store_all_blobs(True)
-    notary_url = os.environ.get("EQTY_NOTARY_URL")
-    eqty_sdk.set_active_signer(
-        eqty_sdk.Signer.vcomp_notary(
-            url=notary_url,
-            name="banking77-trainer-notary",
-            _load_if_exists=True,
-        )
-        if notary_url
-        else eqty_sdk.Signer.load_or_create(name="banking77-trainer")
-    )
-
-    main_source = eqty_sdk.Code.from_object(
-        inspect.getsource(main), name="main source"
-    )
     set_seed(args.seed)
     labels = None if args.no_label_list else load_labels()
-    if labels is not None:
-        label_file = eqty_sdk.Document.from_path(
-            DATA_DIR / "labels.json", name="Banking77 label taxonomy JSON"
-        )
-        label_data = eqty_sdk.Dataset.from_object(
-            labels, name="Banking77 label taxonomy"
-        )
-        (
-            eqty_sdk.Computation.new(
-                name="Load label taxonomy",
-                description="Read the Banking77 taxonomy used in training prompts.",
-                computation_type="ingest",
-            )
-            .add_input_cid([main_source.cid, label_file.cid])
-            .add_output_cid(label_data.cid)
-            .set_computation_cid(main_source.cid)
-            .finalize()
-        )
     rows = read_jsonl(DATA_DIR / "train.jsonl")
     if args.limit:
         rows = rows[: args.limit]
@@ -243,46 +139,6 @@ def main():
     )
     model.print_trainable_parameters()
 
-    base_model_reference = eqty_sdk.Configuration.from_object(
-        args.model,
-        name="Hugging Face base-model repository identifier",
-        representation="repository identifier; weight bytes are not captured",
-    )
-    lora_configuration = eqty_sdk.Configuration.from_object(
-        {
-            "r": args.lora_r,
-            "lora_alpha": args.lora_alpha,
-            "lora_dropout": 0.05,
-            "bias": "none",
-            "task_type": "CAUSAL_LM",
-            "target_modules": LORA_TARGETS,
-        },
-        name="LoRA adapter configuration",
-    )
-    configured_model = eqty_sdk.Model.from_object(
-        {
-            "base_model": args.model,
-            "adapter": "LoRA",
-            "target_modules": LORA_TARGETS,
-            "torch_dtype": "bfloat16",
-            "device_map": "cuda",
-        },
-        name="Configured LoRA training model",
-    )
-    (
-        eqty_sdk.Computation.new(
-            name="Configure LoRA model",
-            description="Load the base model and attach the trainable LoRA adapter.",
-            computation_type="model_call",
-        )
-        .add_input_cid(
-            [main_source.cid, base_model_reference.cid, lora_configuration.cid]
-        )
-        .add_output_cid(configured_model.cid)
-        .set_computation_cid(main_source.cid)
-        .finalize()
-    )
-
     trainer = Trainer(
         model=model,
         args=TrainingArguments(
@@ -311,58 +167,6 @@ def main():
     (ADAPTER_DIR / "train_config.json").write_text(
         json.dumps(train_config, indent=2)
     )
-
-    encoded_data = eqty_sdk.Dataset.from_object(
-        dataset, name="Prompt-masked examples supplied for training"
-    )
-    training_configuration = eqty_sdk.Configuration.from_object(
-        {
-            **train_config,
-            "max_sequence_length": MAX_SEQ_LEN,
-            "gradient_checkpointing": False,
-            "lr_scheduler_type": "cosine",
-            "warmup_ratio": 0.03,
-            "bf16": True,
-        },
-        name="LoRA training configuration",
-    )
-    adapter_artifact = eqty_sdk.Model.from_path(
-        ADAPTER_DIR,
-        name="Trained Banking77 LoRA adapter",
-        _store=False,
-        storage="by-reference",
-        storage_reason="model adapter weights are a large external artifact",
-        obtain_from="the adapter directory produced by train.py",
-    )
-    config_artifact = eqty_sdk.Configuration.from_path(
-        ADAPTER_DIR / "train_config.json", name="Saved training configuration"
-    )
-    (
-        eqty_sdk.Computation.new(
-            name="Train and save LoRA adapter",
-            description="Fine-tune the LoRA parameters and write the adapter artifact.",
-            computation_type="fit",
-            seed=args.seed,
-        )
-        .add_input_cid(
-            [
-                main_source.cid,
-                encoded_data.cid,
-                configured_model.cid,
-                training_configuration.cid,
-            ]
-        )
-        .add_output_cid([adapter_artifact.cid, config_artifact.cid])
-        .set_computation_cid(main_source.cid)
-        .finalize()
-    )
-
-    manifest_path = Path(
-        os.environ.get(
-            "EQTY_MANIFEST_PATH", OUT_DIR / "train.auto.manifest.json"
-        )
-    )
-    cfg.get_default_context().export(manifest_path)
 
     print(f"\nadapter saved to {ADAPTER_DIR}")
     print("next: python evaluate.py")

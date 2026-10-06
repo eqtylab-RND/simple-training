@@ -15,7 +15,7 @@ sudo k3s kubectl get pod banking77-train -w
 # watch until "adapter saved ... / TRAIN_DONE"
 sudo k3s kubectl logs -f banking77-train
 
-# copy the adapter + the signed vcomp manifest out, then clean up
+# copy the adapter out, then clean up
 sudo k3s kubectl cp banking77-train:/app/out ./out
 sudo k3s kubectl delete pod banking77-train --grace-period=30 --wait
 ```

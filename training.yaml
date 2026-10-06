@@ -24,23 +24,10 @@ spec:
     args:
     - |
       set -e
-      echo "== wait for in-guest vcomp notary 127.0.0.1:8066 =="
-      python - <<'PY'
-      import time, urllib.request, sys
-      for i in range(120):
-          try:
-              urllib.request.urlopen("http://127.0.0.1:8066/v1/isReady", timeout=5)
-              print("notary ready"); sys.exit(0)
-          except Exception:
-              time.sleep(5)
-      sys.exit("notary not ready")
-      PY
       python train.py --batch-size 8 --limit 2000 --epochs 1
       echo TRAIN_DONE
       sleep infinity
     env:
-    - {name: EQTY_NOTARY,              value: vcomp-coco}
-    - {name: EQTY_NOTARY_URL,          value: "http://127.0.0.1:8066"}
     - {name: HF_HOME,                  value: /cache/hf}
     - {name: HF_HUB_DISABLE_TELEMETRY, value: "1"}
     resources:
