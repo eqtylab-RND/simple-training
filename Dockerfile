@@ -9,7 +9,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY train.py ./
+COPY common.py train.py ./
 COPY data/ ./data/
 
 CMD ["python", "train.py"]
