@@ -1,4 +1,4 @@
-# banking77 LoRA fine-tune on one H100 inside a Kata GPU guest (unsigned).
+# banking77 LoRA fine-tune on one H100 inside a Kata GPU guest with EQTY notary signing.
 apiVersion: v1
 kind: Pod
 metadata:
@@ -24,6 +24,17 @@ spec:
     args:
     - |
       set -e
+      echo "== wait for in-guest vcomp notary 127.0.0.1:8066 =="
+      python - <<'PY'
+      import time, urllib.request, sys
+      for i in range(120):
+          try:
+              urllib.request.urlopen("http://127.0.0.1:8066/v1/isReady", timeout=5)
+              print("notary ready"); sys.exit(0)
+          except Exception:
+              time.sleep(5)
+      sys.exit("notary not ready")
+      PY
       python train.py --batch-size 32 --grad-accum 1 --limit 2000 --epochs 1
       echo TRAIN_DONE
       echo "== uploading /app/out to azure blob container 'out' =="
@@ -32,6 +43,7 @@ spec:
       echo UPLOAD_DONE
       sleep infinity
     env:
+    - {name: EQTY_NOTARY_URL,         value: "http://127.0.0.1:8066"}
     - {name: HF_HOME,                  value: /cache/hf}
     - {name: HF_HUB_DISABLE_TELEMETRY, value: "1"}
     - {name: AZURE_BLOB_SAS_URL,       value: "__AZURE_BLOB_SAS_URL__"}

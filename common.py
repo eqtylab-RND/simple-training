@@ -9,9 +9,12 @@ between training and evaluation the comparison is meaningless.
 from __future__ import annotations
 
 import json
+import inspect
 import os
 import re
 from pathlib import Path
+
+import eqty_sdk as sdk
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
@@ -35,7 +38,17 @@ MAX_SEQ_LEN = 1024
 
 
 def load_labels() -> list[str]:
-    return json.loads((DATA_DIR / "labels.json").read_text())
+    path = DATA_DIR / "labels.json"
+    source = sdk.Dataset.from_path(path, name="Banking77 taxonomy file", _store=True)
+    labels = json.loads(path.read_text())
+    run = sdk.Computation.new(name="Load taxonomy", computation_type="ingest", _store=True)
+    run.add_input_cid(sdk.Code.from_object(inspect.getsource(load_labels),
+                                         name="load_labels", _store=True).cid)
+    run.add_input_cid(source.cid)
+    run.add_output_cid(sdk.Dataset.from_object(labels, name="Ordered intent labels",
+                                             _store=True).cid)
+    run.finalize()
+    return labels
 
 
 def build_user_turn(text: str, labels: list[str] | None) -> str:

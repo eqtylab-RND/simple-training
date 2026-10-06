@@ -1,0 +1,100 @@
+{
+  "target": "/home/user/project/EQTY-RND/simple-training",
+  "agent": "codex",
+  "levels": [
+    {
+      "level": "L1",
+      "agent": "codex",
+      "workdir": "/tmp/cfg-mit0lxh2/l1",
+      "init": {
+        "cwd": "/tmp/cfg-mit0lxh2/l1",
+        "codex_home": {
+          "type": "isolation.codex_home",
+          "home": "/tmp/codex-home-rrs_79j_",
+          "skills": [
+            ".system"
+          ],
+          "system_skills": [
+            ".codex-system-skills.marker",
+            "imagegen",
+            "openai-docs",
+            "review-agent",
+            "skill-creator",
+            "skill-installer"
+          ],
+          "config_files": []
+        },
+        "unexpected_items": []
+      },
+      "tool_calls": [
+        "/bin/bash -lc 'rg --files --hidden repo'",
+        "/bin/bash -lc 'nl -ba repo/train.py'",
+        "/bin/bash -lc 'nl -ba repo/common.py'",
+        "/bin/bash -lc 'nl -ba repo/README.md; nl -ba repo/training.yaml; nl -ba repo/Dockerfile; nl -ba repo/requirements.txt; nl -ba repo/data/labels.json; nl -ba repo/data/train.jsonl'",
+        "file_change /tmp/cfg-mit0lxh2/l1/L1.md"
+      ],
+      "outside_workdir": [],
+      "checks": {
+        "prompt_has_no_project_words": true,
+        "workdir_outside_git": true,
+        "fresh_codex_home": true,
+        "only_expected_event_items": true,
+        "every_tool_call_inside_workdir": true,
+        "agent_succeeded": true,
+        "output_has_path_line": true,
+        "output_has_mermaid": true
+      },
+      "passed": true,
+      "known_residue": "Codex's built-in .system skills (.codex-system-skills.marker, imagegen, openai-docs, review-agent, skill-creator, skill-installer) are installed into the fresh home; reads are audited from command text, not enforced by the sandbox",
+      "prompt": "Give me a high-level control flow diagram of what happens in this program.\n\nWhat it's for: someone will use this diagram to answer, for any output the program produces, \"where did this come from?\" \u2014 which files were loaded, which inputs and settings shaped it, and which steps transformed it. Diagram the run of the program that makes those dependencies most visible.\n\n**Program:** the repository in `./repo/` (relative to your working directory). Read only files in that directory. Do not read any other files, do not browse the web, do not install anything, and do not run any of the program's code or any interpreter: read the files.\n\n**Budget:** about 9 boxes.\n\n**Output:** write a single Markdown file to `./L1.md` containing, in this order:\n1. One line starting `Path:` \u2014 which path through the program you diagrammed: which file or function starts it and, if the program offers several commands or entry points, the command sequence. Choose it yourself from the code.\n2. The diagram as a Mermaid `flowchart TD` code block. Box labels are short: a function name and a half-sentence, e.g. \"_cast() \u2014 turn the return value into bytes\". Write every node label and every edge label in double quotes (`A[\"\u2026\"]`, `A -->|\"\u2026\"| B`) and use no backticks inside the diagram.\n3. A table with one row per box: `box id | label | where it lives (file:function or file:line range) | what it does`. Every box must have a row, and every \"where it lives\" must name real code.\n4. Under a heading `## Other entry points`, list the runnable entry points or paths your diagram does not cover.\n\nThe deliverable is a drawn diagram, not an essay. No other prose."
+    },
+    {
+      "level": "L2",
+      "agent": "codex",
+      "workdir": "/tmp/cfg-mit0lxh2/l2",
+      "init": {
+        "cwd": "/tmp/cfg-mit0lxh2/l2",
+        "codex_home": {
+          "type": "isolation.codex_home",
+          "home": "/tmp/codex-home-iwb6oqto",
+          "skills": [
+            ".system"
+          ],
+          "system_skills": [
+            ".codex-system-skills.marker",
+            "imagegen",
+            "openai-docs",
+            "review-agent",
+            "skill-creator",
+            "skill-installer"
+          ],
+          "config_files": []
+        },
+        "unexpected_items": []
+      },
+      "tool_calls": [
+        "/bin/bash -lc 'cat L1.md'",
+        "/bin/bash -lc 'rg --files repo'",
+        "/bin/bash -lc 'nl -ba repo/common.py'",
+        "/bin/bash -lc 'nl -ba repo/train.py'",
+        "/bin/bash -lc 'cat repo/requirements.txt\ncat repo/data/labels.json\nhead -n 3 repo/data/train.jsonl'",
+        "file_change /tmp/cfg-mit0lxh2/l2/L2.md"
+      ],
+      "outside_workdir": [],
+      "checks": {
+        "prompt_has_no_project_words": true,
+        "workdir_outside_git": true,
+        "fresh_codex_home": true,
+        "only_expected_event_items": true,
+        "every_tool_call_inside_workdir": true,
+        "agent_succeeded": true,
+        "output_has_path_line": true,
+        "output_has_mermaid": true,
+        "path_line_carried_verbatim": true
+      },
+      "passed": true,
+      "known_residue": "Codex's built-in .system skills (.codex-system-skills.marker, imagegen, openai-docs, review-agent, skill-creator, skill-installer) are installed into the fresh home; reads are audited from command text, not enforced by the sandbox",
+      "prompt": "Go one level deeper \u2014 show the major functions and the branches between them, but don't go into individual statements.\n\nWhat it's for: someone will use this diagram to answer, for any output the program produces, \"where did this come from?\" \u2014 which files were loaded, which inputs and settings shaped it, and which steps transformed it. Diagram the run of the program that makes those dependencies most visible.\n\n**Program:** the repository in `./repo/` (relative to your working directory). Read only files in that directory, plus `./L1.md`. Do not read any other files, do not browse the web, do not install anything, and do not run any of the program's code or any interpreter: read the files.\n\n**One level up:** the high-level diagram for this program is `./L1.md`. Go one level deeper than that, on the same path:\n\nPath: `repo/train.py:main()` via `python train.py` with defaults, from loading training inputs through saving the LoRA adapter.\n\n**What a box is:** a major function, or a branch between major functions. Individual statements are not boxes; if a box would be one line of code, it belongs inside its caller. Draw branches as decision nodes with labelled edges.\n\n**Budget:** about 30 boxes.\n\n**Output:** write a single Markdown file to `./L2.md` containing, in this order:\n1. One line starting `Path:` \u2014 the same `Path:` line as the high-level diagram, verbatim.\n2. The diagram as a Mermaid `flowchart TD` code block. Box labels are short: a function name and a half-sentence, e.g. \"_cast() \u2014 turn the return value into bytes\". Write every node label and every edge label in double quotes (`A[\"\u2026\"]`, `A -->|\"\u2026\"| B`) and use no backticks inside the diagram.\n3. A table with one row per box: `box id | label | where it lives (file:function or file:line range) | what it does`. Every box must have a row, and every \"where it lives\" must name real code.\n\nThe deliverable is a drawn diagram, not an essay. No other prose."
+    }
+  ]
+}

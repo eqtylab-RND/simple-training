@@ -1,0 +1,281 @@
+{
+  "entry": "train.py",
+  "types_from": "the catalogue only (--types ast)",
+  "functions": [
+    {
+      "name": "build_user_turn",
+      "file": "common.py",
+      "lines": [
+        41,
+        47
+      ],
+      "reached": true
+    },
+    {
+      "name": "canonical_label",
+      "file": "common.py",
+      "lines": [
+        64,
+        75
+      ],
+      "reached": false
+    },
+    {
+      "name": "load_labels",
+      "file": "common.py",
+      "lines": [
+        37,
+        38
+      ],
+      "reached": true
+    },
+    {
+      "name": "normalize_prediction",
+      "file": "common.py",
+      "lines": [
+        78,
+        97
+      ],
+      "reached": false
+    },
+    {
+      "name": "render_prompt",
+      "file": "common.py",
+      "lines": [
+        50,
+        58
+      ],
+      "reached": true
+    },
+    {
+      "name": "collate",
+      "file": "train.py",
+      "lines": [
+        81,
+        93
+      ],
+      "reached": true
+    },
+    {
+      "name": "encode",
+      "file": "train.py",
+      "lines": [
+        51,
+        78
+      ],
+      "reached": true
+    },
+    {
+      "name": "main",
+      "file": "train.py",
+      "lines": [
+        96,
+        177
+      ],
+      "reached": true
+    },
+    {
+      "name": "read_jsonl",
+      "file": "train.py",
+      "lines": [
+        46,
+        48
+      ],
+      "reached": true
+    }
+  ],
+  "steps": [
+    {
+      "name": "load_labels",
+      "where": "common.py:37",
+      "call_sites": 1,
+      "loop_body": false,
+      "returned_none": false,
+      "returns": [
+        "json"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": null,
+      "unproduced": [],
+      "calls": []
+    },
+    {
+      "name": "build_user_turn",
+      "where": "common.py:41",
+      "call_sites": 1,
+      "loop_body": true,
+      "returned_none": false,
+      "returns": [
+        "?"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": null,
+      "unproduced": [],
+      "calls": []
+    },
+    {
+      "name": "render_prompt",
+      "where": "common.py:50",
+      "call_sites": 1,
+      "loop_body": true,
+      "returned_none": false,
+      "returns": [
+        "?"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": "can't hash tokenizer: transformers.PreTrainedTokenizerBase (\u00a77.1) \u2192 recipe hf-tokenizer",
+      "unproduced": [],
+      "calls": []
+    },
+    {
+      "name": "read_jsonl",
+      "where": "train.py:46",
+      "call_sites": 1,
+      "loop_body": false,
+      "returned_none": false,
+      "returns": [
+        "builtins.list"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": null,
+      "unproduced": [],
+      "calls": []
+    },
+    {
+      "name": "encode",
+      "where": "train.py:51",
+      "call_sites": 1,
+      "loop_body": false,
+      "returned_none": false,
+      "returns": [
+        "builtins.list"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": "can't hash tokenizer: transformers.PreTrainedTokenizerBase (\u00a77.1) \u2192 recipe hf-tokenizer",
+      "unproduced": [
+        "tokenizer: transformers.PreTrainedTokenizerBase (from main) \u2192 recipe hf-tokenizer"
+      ],
+      "calls": [
+        "build_user_turn",
+        "render_prompt"
+      ]
+    },
+    {
+      "name": "collate",
+      "where": "train.py:81",
+      "call_sites": 1,
+      "loop_body": false,
+      "returned_none": false,
+      "returns": [
+        "builtins.dict"
+      ],
+      "mutated": [],
+      "path_args": [],
+      "io": [],
+      "breaks": null,
+      "unproduced": [],
+      "calls": []
+    },
+    {
+      "name": "main",
+      "where": "train.py:96",
+      "call_sites": 1,
+      "loop_body": false,
+      "returned_none": true,
+      "returns": [],
+      "mutated": [],
+      "path_args": [],
+      "io": [
+        [
+          "Hugging Face hub or cache",
+          "r",
+          "from_pretrained"
+        ],
+        [
+          "str(ADAPTER_DIR)",
+          "w",
+          ".save_pretrained() \u2014 native code, e.g. safetensors"
+        ],
+        [
+          "str(OUT_DIR / 'checkpoints')",
+          "w",
+          "output_dir"
+        ]
+      ],
+      "breaks": "returns None (\u00a76.2) \u2192 recipe none-return",
+      "unproduced": [],
+      "calls": [
+        "collate",
+        "encode",
+        "load_labels",
+        "read_jsonl"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "read_jsonl",
+      "to": "encode",
+      "via": "rows",
+      "type": "?",
+      "passed": "positional",
+      "at": "main",
+      "channel": "return",
+      "derived": true,
+      "confidence": "certain",
+      "decorator_edge": false,
+      "why": "reached through an item or attribute, not passed as a value"
+    },
+    {
+      "from": "build_user_turn",
+      "to": "render_prompt",
+      "via": "user_turn",
+      "type": "?",
+      "passed": "positional",
+      "at": "encode",
+      "channel": "return",
+      "derived": false,
+      "confidence": "unknown",
+      "decorator_edge": null,
+      "why": "type unknown from the source"
+    }
+  ],
+  "file_edges": [],
+  "unresolved_calls": [
+    "common.ADAPTER_DIR.mkdir",
+    "torch.tensor",
+    "transformers.set_seed"
+  ],
+  "components": {
+    "decorators_only": [
+      [
+        "encode"
+      ],
+      [
+        "main"
+      ],
+      [
+        "read_jsonl"
+      ]
+    ],
+    "with_builders": [
+      [
+        "encode",
+        "read_jsonl"
+      ],
+      [
+        "main"
+      ]
+    ]
+  }
+}

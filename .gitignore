@@ -2,3 +2,5 @@ adapter/
 out/
 __pycache__/
 .env
+.eqty-training/
+eqty-instrumentation/simple-training/simple-training.auto.patch
