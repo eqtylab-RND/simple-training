@@ -98,8 +98,8 @@ def main():
     ap.add_argument("--model", default=BASE_MODEL)
     ap.add_argument("--limit", type=int, default=0, help="cap training rows (smoke test)")
     ap.add_argument("--epochs", type=float, default=2.0)
-    ap.add_argument("--batch-size", type=int, default=16)
-    ap.add_argument("--grad-accum", type=int, default=2)
+    ap.add_argument("--batch-size", type=int, default=32)
+    ap.add_argument("--grad-accum", type=int, default=1)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--lora-r", type=int, default=16)
     ap.add_argument("--lora-alpha", type=int, default=32)
@@ -152,8 +152,13 @@ def main():
             logging_steps=10,
             save_strategy="no",
             bf16=True,
+            tf32=True,
             report_to=[],
             seed=args.seed,
+            # Batch similar-length examples together so collate() pads less.
+            group_by_length=True,
+            dataloader_num_workers=4,
+            dataloader_pin_memory=True,
         ),
         train_dataset=dataset,
         data_collator=lambda b: collate(b, tokenizer.pad_token_id),
